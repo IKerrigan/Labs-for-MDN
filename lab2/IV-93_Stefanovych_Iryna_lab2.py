@@ -107,6 +107,7 @@ class Lab2:
         for i in range(len(ruv)):
             if ruv[i] > r_kr:
                 print("Неоднорідна дисперсія")
+                return
 
         mx1 = (self.xn[0][0] + self.xn[1][0] + self.xn[2][0]) / 3
         mx2 = (self.xn[0][1] + self.xn[1][1] + self.xn[2][1]) / 3
