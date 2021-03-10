@@ -1,176 +1,158 @@
-import itertools
-import numpy as np
-from random import *
+import random
 import math
-from functools import *
 
 
 class Lab2:
-    y_max = (30 - 23) * 10
-    y_min = (20 - 23) * 10
+    variant = 323
+    m = 6
 
-    x_table = [[-1, -1],
-               [-1, +1],
-               [+1, -1]]
-
-    p = 0.99
+    y_max = (30 - variant) * 10
+    y_min = (20 - variant) * 10
 
     x1_min = -5
     x1_max = 15
     x2_min = -25
     x2_max = 10
 
-    naturalized_x_table = [[x1_min, x2_min],
-                           [x1_min, x2_max],
-                           [x1_max, x2_min]]
+    xn = [[-1, -1], [1, -1], [-1, 1]]
 
     def __init__(self):
         self.calculate_and_print()
 
-    def romanovsky_criteria(self, y1: np.array, y2: np.array, y3: np.array):
-        def sigma_theta(m):
-            return math.sqrt(abs(2 * (2 * m - 2) / (m * (m - 4))))
+    @staticmethod
+    def average_y(arr):
+        average_ny = []
+        for i in arr:
+            average_ny.append(round(sum(i)/len(i), 2))
+        return average_ny
 
-        def f_uv(y_u: np.array, y_v: np.array):
-            dev_u = np.var(y_u)
-            dev_v = np.var(y_v)
-            return dev_u / dev_v if dev_u > dev_v else dev_v / dev_u
+    @staticmethod
+    def dispersion(counting_list):
+        d = []
+        for i in range(len(counting_list)):
+            sum_of_y = 0
+            for k in counting_list[i]:
+                sum_of_y += (k - Lab2.average_y(counting_list)[i]) ** 2
+            d.append(round(sum_of_y / len(counting_list[i]), 2))
+        return d
 
-        def theta_uv(m: int, fuv: float):
-            return (m - 2) / m * fuv
+    @staticmethod
+    def f_uv(u, v):
+        if u >= v:
+            return u / v
+        else:
+            return v / u
 
-        def r_uv(s_t: float, s_uv: float):
-            return abs(s_uv - 1) / s_t
+    @staticmethod
+    def determinant(x11, x12, x13, x21, x22, x23, x31, x32, x33):
+        det = x11 * x22 * x33 + x12 * x23 * x31 + x32 * x21 * x13 - x13 * x22 * x31 - x32 * x23 * x11 - x12 * x21 * x33
+        return det
 
-        def check_criteria(R, m):
-            romanovsky_criteria_table = [[None, 2, 6, 8, 10, 12, 15, 20],
-                                         [0.99, 1.72, 2.16, 2.43, 2.62, 2.75, 2.90, 3.08],
-                                         [0.98, 1.72, 2.13, 2.37, 2.54, 2.66, 2.80, 2.96],
-                                         [0.95, 1.71, 2.10, 2.27, 2.41, 2.52, 2.64, 2.78],
-                                         [0.90, 1.69, 2.00, 2.17, 2.29, 2.39, 2.49, 2.62]]
-            column = romanovsky_criteria_table[0].index(
-                sorted(filter(lambda el: el >= m, romanovsky_criteria_table[0][1:]))[0])
-            trusted_probability_row = 1
-            return R < romanovsky_criteria_table[trusted_probability_row][column]
+    @staticmethod
+    def theta(m, f):
+        return (m-2/m)*f
 
-        sTheta = sigma_theta(self.m)
-        accordance = True
-        for combination in itertools.combinations((y1, y2, y3), 2):
-            fUV = f_uv(combination[0], combination[1])
-            sUV = theta_uv(self.m, fUV)
-            R = r_uv(sTheta, sUV)
-            accordance *= check_criteria(R, self.m)
-        return accordance
-
-    def experiment(self):
-        return np.array([[randint(self.y_min, self.y_max) for _ in range(self.m)] for _ in range(3)])
-
-    def normalized_regression_coeffs(self):
-        def m_i(arr: np.array):
-            return np.average(arr)
-
-        def a_i(arr: np.array):
-            return sum(arr ** 2) / len(arr)
-
-        def a_jj(arr1: np.array, arr2: np.array):
-            return reduce(lambda res, el: res + el[0] * el[1], list(zip(arr1, arr2)), 0) / len(arr1)
-
-        y_vals = np.array([np.average(i) for i in self.y_table])
-        x1_vals = np.array([i[0] for i in self.x_table])
-        x2_vals = np.array([i[1] for i in self.x_table])
-        m_x1 = m_i(x1_vals)
-        m_x2 = m_i(x2_vals)
-        m_y = m_i(y_vals)
-        a1 = a_i(x1_vals)
-        a2 = a_jj(x1_vals, x2_vals)
-        a3 = a_i(x2_vals)
-        a11 = a_jj(x1_vals, y_vals)
-        a22 = a_jj(x2_vals, y_vals)
-        coeffs_matrix = [[1, m_x1, m_x2],
-                         [m_x1, a1, a2],
-                         [m_x2, a2, a3]]
-        vals_matrix = [m_y, a11, a22]
-        b_coeffs = list(map(lambda num: round(num, 2), np.linalg.solve(coeffs_matrix, vals_matrix)))
-        self.b_coeffs = b_coeffs
-        return b_coeffs
-
-    def assert_normalized_regression(self):
-        y_average_experim_vals = np.array([np.average(i) for i in self.y_table])
-        print("\nПеревірка правильності знаходження коефіцієнтів рівняння регресії: ")
-        print("Середні експериментальні значення y для кожного рядка матриці планування: " +
-              ", ".join(map(str, y_average_experim_vals)))
-        y_theoretical = [self.b_coeffs[0] + self.x_table[i][0] * self.b_coeffs[1] + self.x_table[i][1] * self.b_coeffs[2] for i in
-                         range(len(self.x_table))]
-        print("Теоретичні значення y для кожного рядка матриці планування: ".ljust(74) + ", ".join(
-            map(str, y_theoretical)))
-        for i in range(len(self.x_table)):
-            try:
-                assert round(y_theoretical[i], 2) == round(y_average_experim_vals[i], 2)
-            except:
-                print("Неправильні результати пошуку коефіцієнтів рівняння регресії")
-                return
-        print("Правильні результати пошуку коефіцієнтів рівняння регресії")
-
-    def naturalized_regression(self, b_coeffs: list):
-        x1 = abs(self.x1_max - self.x1_min) / 2
-        x2 = abs(self.x2_max - self.x2_min) / 2
-        x10 = (self.x1_max + self.x1_min) / 2
-        x20 = (self.x2_max + self.x2_min) / 2
-        a0 = b_coeffs[0] - b_coeffs[1] * x10 / x1 - b_coeffs[2] * x20 / x2
-        a1 = b_coeffs[1] / x1
-        a2 = b_coeffs[2] / x2
-        return [a0, a1, a2]
-
-    def assert_naturalized_regression(self):
-        y_average_experim_vals = np.array([np.average(i) for i in self.y_table])
-        print("\nПеревірка натуралізації коефіцієнтів рівняння регресії:")
-        print("Середні експериментальні значення y для кожного рядка матриці планування: " +
-              ", ".join(map(str, y_average_experim_vals)))
-        y_theoretical = [self.a_coeffs[0] + self.naturalized_x_table[i][0] * self.a_coeffs[1] + self.naturalized_x_table[i][1] * self.a_coeffs[2]
-                         for i in range(len(self.naturalized_x_table))]
-        print("Теоретичні значення y для кожного рядка матриці планування: ".ljust(74) + ", ".join(
-            map(str, y_theoretical)))
-        for i in range(len(self.naturalized_x_table)):
-            try:
-                assert round(y_theoretical[i], 2) == round(y_average_experim_vals[i], 2)
-            except:
-                print("Неправильні результати натуралізації")
-                return
-        print("Правильні результати натуралізації")
+    @staticmethod
+    def r(theta, sigma_theta):
+        return abs(theta - 1)/sigma_theta
 
     def calculate_and_print(self):
-        self.m = 5
-        self.y_table = self.experiment()
+        y = [[random.randint(self.y_min, self.y_max) for i in range(6)] for j in range(3)]
+        print(f'Матриця планування при m = {self.m}')
+        for i in range(3):
+            print(y[i])
 
-        while not self.romanovsky_criteria(*self.y_table):
-            self.m += 1
-            self.y_table = self.experiment()
+        avg_y = Lab2.average_y(y)
+        print(f"\nСереднє значення функції відгуку в рядку (avg_y): {avg_y}")
 
-        labels_table = ["x1", "x2"] + ["y{}".format(i + 1) for i in range(self.m)]
-        rows_table = [self.naturalized_x_table[i] + list(self.y_table[i]) for i in range(3)]
-        rows_normalized_table = [self.x_table[i] + list(self.y_table[i]) for i in range(3)]
+        print("\nДисперсії по рядках")
+        print(f"d(y1): {Lab2.dispersion(y)[0]}")
+        print(f"d(y2): {Lab2.dispersion(y)[1]}")
+        print(f"d(y3): {Lab2.dispersion(y)[2]}")
 
-        print("Матриця планування:")
-        print((" " * 4).join(labels_table))
-        print("\n".join([" ".join(map(lambda j: "{:<+5}".format(j), rows_table[i])) for i in range(len(rows_table))]))
-        print("\t")
+        sigma_theta = round(math.sqrt((2 * (2 * self.m - 2)) / (self.m * (self.m - 4))), 2)
+        print(f"\nОсновне відхилення: {sigma_theta}\n")
 
-        print("Нормована матриця планування:")
-        print((" " * 4).join(labels_table))
-        print("\n".join([" ".join(map(lambda j: "{:<+5}".format(j), rows_normalized_table[i])) for i in
-                         range(len(rows_normalized_table))]))
-        print("\t")
+        fuv1 = Lab2.f_uv(Lab2.dispersion(y)[0], Lab2.dispersion(y)[1])
+        fuv2 = Lab2.f_uv(Lab2.dispersion(y)[2], Lab2.dispersion(y)[0])
+        fuv3 = Lab2.f_uv(Lab2.dispersion(y)[2], Lab2.dispersion(y)[1])
 
-        b_coeffs = self.normalized_regression_coeffs()
-        print("Рівняння регресії для нормованих факторів: y = {0} {1:+}*x1 {2:+}*x2".format(*b_coeffs))
-        self.assert_normalized_regression()
-        a_coeffs = self.naturalized_regression(b_coeffs)
-        self.a_coeffs = a_coeffs
-        print("\nРівняння регресії для натуралізованих факторів: y = {0} {1:+}*x1 {2:+}*x2".format(*a_coeffs))
-        self.assert_naturalized_regression()
+        fuv = [fuv1, fuv2, fuv3]
+
+        print(f"Fuv1: {fuv1}")
+        print(f"Fuv2: {fuv2}")
+        print(f"Fuv3: {fuv3}")
+
+        theta_1 = Lab2.theta(self.m, fuv1)
+        theta_2 = Lab2.theta(self.m, fuv2)
+        theta_3 = Lab2.theta(self.m, fuv3)
+
+        print(f"\nθuv1: {theta_1}")
+        print(f"θuv2: {theta_2}")
+        print(f"θuv3: {theta_3}")
+
+        print(f"\nRuv1: {Lab2.r(theta_1, sigma_theta)}")
+        print(f"Ruv2: {Lab2.r(theta_2, sigma_theta)}")
+        print(f"Ruv3: {Lab2.r(theta_3, sigma_theta)}")
+
+        theta = [((self.m - 2) / self.m) * fuv[0],
+                 ((self.m - 2) / self.m) * fuv[1],
+                 ((self.m - 2) / self.m) * fuv[2]]
+
+        ruv = [abs(theta[0] - 1) / sigma_theta,
+               abs(theta[1] - 1) / sigma_theta,
+               abs(theta[2] - 1) / sigma_theta]
+
+        r_kr = 2
+        for i in range(len(ruv)):
+            if ruv[i] > r_kr:
+                print("Неоднорідна дисперсія")
+
+        mx1 = (self.xn[0][0] + self.xn[1][0] + self.xn[2][0]) / 3
+        mx2 = (self.xn[0][1] + self.xn[1][1] + self.xn[2][1]) / 3
+        my = sum(avg_y) / 3
+
+        a1 = (self.xn[0][0] ** 2 + self.xn[1][0] ** 2 + self.xn[2][0] ** 2) / 3
+        a2 = (self.xn[0][0] * self.xn[0][1] + self.xn[1][0] * self.xn[1][1] + self.xn[2][0] * self.xn[2][1]) / 3
+        a3 = (self.xn[0][1] ** 2 + self.xn[1][1] ** 2 + self.xn[2][1] ** 2) / 3
+
+        a11 = (self.xn[0][0] * avg_y[0] + self.xn[1][0] * avg_y[1] + self.xn[2][0] * avg_y[2]) / 3
+        a22 = (self.xn[0][1] * avg_y[0] + self.xn[1][1] * avg_y[1] + self.xn[2][1] * avg_y[2]) / 3
+
+        b0 = Lab2.determinant(my, mx1, mx2, a11, a1, a2, a22, a2, a3) / Lab2.determinant(1, mx1, mx2, mx1, a1, a2, mx2, a2, a3)
+        b1 = Lab2.determinant(1, my, mx2, mx1, a11, a2, mx2, a22, a3) / Lab2.determinant(1, mx1, mx2, mx1, a1, a2, mx2, a2, a3)
+        b2 = Lab2.determinant(1, mx1, my, mx1, a1, a11, mx2, a2, a22) / Lab2.determinant(1, mx1, mx2, mx1, a1, a2, mx2, a2, a3)
+
+        print("\nНормовані коефіцієнти рівняння регресії:")
+        print(f"b0: {b0}")
+        print(f"b1: {b1}")
+        print(f"b2: {b2}")
+
+        y_pr1 = b0 + b1 * self.xn[0][0] + b2 * self.xn[0][1]
+        y_pr2 = b0 + b1 * self.xn[1][0] + b2 * self.xn[1][1]
+        y_pr3 = b0 + b1 * self.xn[2][0] + b2 * self.xn[2][1]
+
+        dx1 = abs(self.x1_max - self.x1_min) / 2
+        dx2 = abs(self.x2_max - self.x2_min) / 2
+        x10 = (self.x1_max + self.x1_min) / 2
+        x20 = (self.x2_max + self.x2_min) / 2
+
+        a_0 = b0 - (b1 * x10 / dx1) - (b2 * x20 / dx2)
+        a_1 = b1 / dx1
+        a_2 = b2 / dx2
+
+        y_p1 = a_0 + a_1 * self.x1_min + a_2 * self.x2_min
+        y_p2 = a_0 + a_1 * self.x1_max + a_2 * self.x2_min
+        y_p3 = a_0 + a_1 * self.x1_min + a_2 * self.x2_max
+
+        print('\nЕкспериментальні значення критерію Романовського:')
+        for i in range(3):
+            print(ruv[i])
+
+        print('\nНатуралізовані коефіцієнти: \na0 =', round(a_0, 4), '\na1 =', round(a_1, 4), '\na2 =', round(a_2, 4))
+        print('\nУ практичний: ', round(y_pr1, 4), round(y_pr2, 4), round(y_pr3, 4))
+        print('У середній:', round(avg_y[0], 4), round(avg_y[1], 4), round(avg_y[2], 4))
+        print('У практичний норм.', round(y_p1, 4), round(y_p2, 4), round(y_p3, 4))
+
 
 Lab2()
-
-
-
-
