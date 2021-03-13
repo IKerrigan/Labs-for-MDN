@@ -50,7 +50,7 @@ class Lab2:
 
     @staticmethod
     def theta(m, f):
-        return (m-2/m)*f
+        return ((m-2)/m)*f
 
     @staticmethod
     def r(theta, sigma_theta):
@@ -77,8 +77,6 @@ class Lab2:
         fuv2 = Lab2.f_uv(Lab2.dispersion(y)[2], Lab2.dispersion(y)[0])
         fuv3 = Lab2.f_uv(Lab2.dispersion(y)[2], Lab2.dispersion(y)[1])
 
-        fuv = [fuv1, fuv2, fuv3]
-
         print(f"Fuv1: {fuv1}")
         print(f"Fuv2: {fuv2}")
         print(f"Fuv3: {fuv3}")
@@ -91,23 +89,23 @@ class Lab2:
         print(f"θuv2: {theta_2}")
         print(f"θuv3: {theta_3}")
 
-        print(f"\nRuv1: {Lab2.r(theta_1, sigma_theta)}")
-        print(f"Ruv2: {Lab2.r(theta_2, sigma_theta)}")
-        print(f"Ruv3: {Lab2.r(theta_3, sigma_theta)}")
+        ruv_1 = Lab2.r(theta_1, sigma_theta)
+        ruv_2 = Lab2.r(theta_2, sigma_theta)
+        ruv_3 = Lab2.r(theta_3, sigma_theta)
 
-        theta = [((self.m - 2) / self.m) * fuv[0],
-                 ((self.m - 2) / self.m) * fuv[1],
-                 ((self.m - 2) / self.m) * fuv[2]]
+        print('Експериментальні значення критерію Романовського:')
+        print(f"\nRuv1: {ruv_1}")
+        print(f"Ruv2: {ruv_2}")
+        print(f"Ruv3: {ruv_3}")
 
-        ruv = [abs(theta[0] - 1) / sigma_theta,
-               abs(theta[1] - 1) / sigma_theta,
-               abs(theta[2] - 1) / sigma_theta]
+        ruv = [ruv_1, ruv_2, ruv_3]
 
         r_kr = 2
         for i in range(len(ruv)):
             if ruv[i] > r_kr:
                 print("Неоднорідна дисперсія")
-                return
+                self.m += 1
+                return self.calculate_and_print()
 
         mx1 = (self.xn[0][0] + self.xn[1][0] + self.xn[2][0]) / 3
         mx2 = (self.xn[0][1] + self.xn[1][1] + self.xn[2][1]) / 3
@@ -145,10 +143,6 @@ class Lab2:
         y_p1 = a_0 + a_1 * self.x1_min + a_2 * self.x2_min
         y_p2 = a_0 + a_1 * self.x1_max + a_2 * self.x2_min
         y_p3 = a_0 + a_1 * self.x1_min + a_2 * self.x2_max
-
-        print('\nЕкспериментальні значення критерію Романовського:')
-        for i in range(3):
-            print(ruv[i])
 
         print('\nНатуралізовані коефіцієнти: \na0 =', round(a_0, 4), '\na1 =', round(a_1, 4), '\na2 =', round(a_2, 4))
         print('\nУ практичний: ', round(y_pr1, 4), round(y_pr2, 4), round(y_pr3, 4))
