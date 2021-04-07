@@ -179,7 +179,8 @@ class Lab3:
         if gp < self.gt:
             print("Дисперсія однорідна")
         else:
-            print('Дсперсія не однорідна. Потрібно збільшити m')
+            print('Дисперсія не однорідна. Потрібно збільшити m')
+            return
 
         sb = sum(dispersion) / len(dispersion)
         sb2_uniform = sb / (self.n * self.m)
