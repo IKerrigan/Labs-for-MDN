@@ -180,6 +180,8 @@ class Lab4:
         b = ["b0", "b1", "b2", "b3", "b4", "b12", "b13", "b23", "b123"]
         index_list = [i for i, x in enumerate(imp) if x == 0]
         index_list = [b[i] for i in index_list]
+        self.not_important_coef_list = index_list
+
         deleted_coef = ', '.join(
             index_list) + " - коефіцієнти рівняння регресії приймаємо незначними, виключаємо їх з рівняння.\n"
         print(deleted_coef)
@@ -188,6 +190,8 @@ class Lab4:
         index_list2 = [i for i, x in enumerate(imp2) if x == 0]
         index_list2 = [b[i] for i in index_list2]
         self.important_coef = ', '.join(index_list2) + " - значемі коефіцієнти рівняння регресії."
+        print(self.important_coef)
+        self.important_coef_list = index_list2
 
         self.y_x = [True if i > T_tabl else False for i in T]
         x_i = list(compress(["", "*x1", "*x2", "*x3", "*x12", "*x13", "*x23", "*x123"], self.y_x))
@@ -210,7 +214,7 @@ class Lab4:
         ft = f.isf(q, f4, f3)
         print("Табличне значення критерія Фішера: Ft = " + str(round(ft, 4)))
 
-        if fp < ft:
+        if fp < ft and len(self.important_coef_list) >= len(self.not_important_coef_list):
             print("\nРівняння регресії адекватно оригіналу.")
             pass
         else:
