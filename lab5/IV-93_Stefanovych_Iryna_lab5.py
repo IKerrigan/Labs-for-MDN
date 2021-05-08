@@ -141,6 +141,8 @@ class Lab5:
         print("Значущі коефіцієнти регресії:", coefs1)
         print("Незначущі коефіцієнти регресії:", coefs2)
 
+        self.important_coefs = coefs1
+
         y_st = []
         for i in range(15):
             y_st.append(
@@ -156,10 +158,10 @@ class Lab5:
 
         print("Fp =", fp)
 
-        if fp < f.ppf(q=0.95, dfn=f4, dfd=F3):
-            print("Рівняння регресії адекватне при рівні значимості 0.05")
+        if fp < f.ppf(q=0.95, dfn=f4, dfd=F3) and len(self.important_coefs) != 2:
+            print("Рівняння регресії адекватне")
         else:
-            print("Рівняння регресії неадекватне при рівні значимості 0.05")
+            print("Рівняння регресії неадекватне")
 
 
 Lab5()
