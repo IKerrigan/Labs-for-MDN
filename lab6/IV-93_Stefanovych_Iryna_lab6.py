@@ -5,7 +5,23 @@ import numpy as np
 from numpy.linalg import solve
 from scipy.stats import f, t
 from prettytable import PrettyTable
+from functools import wraps
+from time import *
 
+timer = 0
+
+def timer_func(func):
+    @wraps(func)
+    def wrap_func(*args, **kwargs):
+        global timer
+        t1 = time()
+        result = func(*args, **kwargs)
+        t2 = time()
+
+        timer += t2 - t1
+        return result
+
+    return wrap_func
 
 class Lab6:
     def __init__(self, n, m):
@@ -151,15 +167,9 @@ class Lab6:
                      list_for_a[k][9]
         for i in range(15):
             print("{:.3f}".format(y_i[i]), end=" ")
-        print("\n\nПеревірка за критерієм Кохрена")
-        Gp = max(dispersions) / sum(dispersions)
-        Gt = 0.3346
-        print("Gp =", Gp)
 
-        if Gp < Gt:
-            print("Дисперсія однорідна")
-        else:
-            print("Дисперсія неоднорідна")
+
+        Lab6.cohren_criteria(dispersions)
 
         print("\nПеревірка значущості коефіцієнтів за критерієм Стьюдента")
         sb = sum(dispersions) / len(dispersions)
@@ -201,9 +211,30 @@ class Lab6:
         Sad = m * sum([(y_st[i] - Y_average[i]) ** 2 for i in range(15)]) / (n - d)
         Fp = Sad / sb
         F4 = n - d
-        print("Fp =", Fp)
 
-        if Fp < f.ppf(q=0.95, dfn=F4, dfd=F3):
+        Lab6.fisher_criteria(Fp, F3, F4)
+        print(f'Час виконання перевірок: {timer}')
+
+    @staticmethod
+    @timer_func
+    def cohren_criteria(dispersions):
+        print("\n\nПеревірка за критерієм Кохрена")
+        Gp = max(dispersions) / sum(dispersions)
+        Gt = 0.3346
+        print("Gp =", Gp)
+
+        if Gp < Gt:
+            print("Дисперсія однорідна")
+        else:
+            print("Дисперсія неоднорідна")
+
+    @staticmethod
+    @timer_func
+    def fisher_criteria(fp, f3, f4):
+        print("\n\nПеревірка адекватності за критерієм Фішера")
+        print("Fp =", fp)
+
+        if fp < f.ppf(q=0.95, dfn=f4, dfd=f3):
             print("Рівняння регресії адекватне")
         else:
             print("Рівняння регресії неадекватне")
